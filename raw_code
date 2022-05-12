@@ -1,0 +1,119 @@
+globals [lijst smoothing-y explorers gradius maxradius radius]
+turtles-own [stappenteller]
+patches-own [succes radius2]
+
+to setup
+  clear-all
+
+  set smoothing-y 0
+  ask patches
+  [
+    set pcolor brown
+  ]
+
+  ask patch 0 0
+  [
+    ask patches in-radius (max-pxcor - 10)
+    [
+      set pcolor black
+    ]
+  ]
+
+  set lijst [[ 225 -82 30] [-227  -82 33] [-92  -22 26] [-147 98 36] [ 82  -25 25]
+    [ -61 -69 24] [ 211 -122 28] [ 77 -109 33] [-111 -7 39] [-28 -141 39]
+    [-220 -58 29] [-181 -102 23] [ 93   73 37] [ 166 19 31] [110   18 26]
+    [ 227 -61 28] [ 28   145 28] [  8  104 37] [ 133 57 36] [ 84 -144 37]]
+
+  foreach lijst
+  [
+    circle-coordinate ->
+    let x item 0 circle-coordinate
+    let y item 1 circle-coordinate
+    let r item 2 circle-coordinate
+    ask patch x y  [ ask patches in-radius r [set pcolor brown]
+    ]
+  ]
+
+  create-turtles 11
+  [
+    move-to patch -72 61
+    set size 3
+    set color cyan
+    set heading (who + 1) * 30
+    set stappenteller 0
+  ]
+
+  reset-ticks
+end
+
+
+
+to go
+
+
+  tick
+
+  set smoothing-y smoothing-y * plot-smoothing + (1 - plot-smoothing) * count turtles
+
+  if count turtles > explorers [set explorers count turtles]
+
+  ask turtles
+  [
+
+    forward 1
+    set stappenteller stappenteller + 1
+    set pcolor cyan
+
+    if ((stappenteller > hatch-modulus) or (not can-move? 1) or (count patches in-cone look-forward look-aside with [pcolor != black] > 0))
+    [
+      set stappenteller 0
+
+      hatch 1
+        [
+          set heading heading - (min-angle + random rand-extra-angle)
+          if (count patches in-cone look-forward look-aside with [pcolor != black] > 0)
+          [ die ]
+      ]
+
+      set heading heading + (min-angle + random rand-extra-angle)
+      if (count patches in-cone look-forward look-aside with [pcolor != black] > 0)
+          [ die ]
+    ]
+  ]
+
+  set radius 2
+  let geldig 0
+
+  if not any? turtles
+  [
+    while [count patches with [pcolor = black] > 0]
+    [
+      ask patches
+      [
+        set geldig 0 if pcolor = black
+        [
+          ask patches in-radius radius
+          [
+            if pcolor = cyan [set geldig 1]
+          ]
+
+          if (geldig = 1)
+          [set gradius gradius + radius
+            set pcolor scale-color yellow (0 + 7.5 * radius) 0 150
+          ]
+
+          if (radius > 16)
+          [set pcolor white]
+        ]
+
+        set radius2 radius
+      ]
+
+      if geldig = 0 [set radius radius * 2]
+
+      if radius > maxradius [set maxradius radius]
+    ]
+    stop
+  ]
+
+end
